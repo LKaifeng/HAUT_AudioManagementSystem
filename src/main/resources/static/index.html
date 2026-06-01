@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>音频管理系统</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .upload-section { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { cursor: pointer; padding: 5px 10px; }
+        .btn-delete { background-color: #ff4d4d; color: white; border: none; }
+        .btn-play { background-color: #4CAF50; color: white; border: none; }
+        audio { height: 30px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+    <h1>音频管理系统</h1>
+
+    <!-- 上传模块 -->
+    <div class="upload-section">
+        <h3>上传音频</h3>
+        <input type="file" id="fileInput" accept=".mp3,.wav">
+        <button onclick="uploadFile()">上传</button>
+        <p id="uploadStatus"></p>
+    </div>
+
+    <!-- 列表模块 -->
+    <h3>音频列表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>文件名</th>
+                <th>上传时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="audioList">
+            <!-- 数据将通过 JS 插入 -->
+        </tbody>
+    </table>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/audio';
+
+        // 页面加载时获取列表
+        window.onload = loadList;
+
+        async function loadList() {
+            try {
+                const response = await fetch(`${API_BASE}/list?page=1&size=10`);
+                const data = await response.json();
+                const list = document.getElementById('audioList');
+                list.innerHTML = '';
+
+                data.records.forEach(item => {
+                    const row = document.createElement('tr');
+                    // 格式化时间
+                    const date = new Date(item.createTime).toLocaleString();
+                    
+                    row.innerHTML = `
+                        <td>${item.id}</td>
+                        <td>${item.fileName}</td>
+                        <td>${date}</td>
+                        <td>
+                            <audio controls src="${API_BASE}/stream/${item.id}"></audio>
+                            <button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>
+                        </td>
+                    `;
+                    list.appendChild(row);
+                });
+            } catch (error) {
+                console.error('加载失败:', error);
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.text();
+                document.getElementById('uploadStatus').innerText = result;
+                if (response.ok) {
+                    fileInput.value = ''; // 清空输入
+                    loadList(); // 刷新列表
+                }
+            } catch (error) {
+                document.getElementById('uploadStatus').innerText = '上传出错';
+            }
+        }
+
+        async function deleteAudio(id) {
+            if (!confirm('确定要删除吗？')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    loadList(); // 刷新列表
+                } else {
+                    alert('删除失败，可能权限不足或文件被占用');
+                }
+            } catch (error) {
+                alert('网络错误');
+            }
+        }
+    </script>
+</body>
+</html>
