@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 请根据你的本地 MySQL 设置修改 url, username, password
+    url: jdbc:mysql://localhost:3306/audio_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: Yzt123456@
+  servlet:
+    multipart:
+      max-file-size: 10MB # 限制上传文件大小
+      max-request-size: 10MB
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true # 开启驼峰命名映射
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开发阶段打印 SQL 日志
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID # 使用雪花算法生成 ID (Long 类型)，如果表 ID 是 VARCHAR，需配合序列化器转 String
+      logic-delete-field: status # 逻辑删除字段
+      logic-delete-value: 0 # 已删除
+      logic-not-delete-value: 1 # 未删除
+
+# 自定义配置：音频存储根路径
+audio:
+  storage-root-path: D:/audio_files/ # Windows 环境示例，Linux 可改为 /var/audio/
