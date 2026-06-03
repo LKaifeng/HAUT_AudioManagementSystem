@@ -3,6 +3,8 @@ package com.example.haut_audiomanagementsystem.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.haut_audiomanagementsystem.entity.AudioAsset;
 import com.example.haut_audiomanagementsystem.service.AudioService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -11,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
+
 import java.io.File;
 
 @RestController
@@ -19,7 +21,7 @@ import java.io.File;
 @CrossOrigin(origins = "*") // 允许前端跨域访问
 public class AudioController {
 
-    @Resource
+     @Autowired
     private AudioService audioService;
 
     @PostMapping("/upload")
