@@ -21,16 +21,3 @@ public class AudioAsset {
     private Date createTime;
     private Integer status;       // 1:正常
 }
-2. Mapper 接口 (AudioAssetMapper.java)
-创建包 com.example.haut_audiomanagementsystem.mapper。
-
-java
-package com.example.haut_audiomanagementsystem.mapper;
-
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.haut_audiomanagementsystem.entity.AudioAsset;
-import org.apache.ibatis.annotations.Mapper;
-
-@Mapper
-public interface AudioAssetMapper extends BaseMapper<AudioAsset> {
-}
