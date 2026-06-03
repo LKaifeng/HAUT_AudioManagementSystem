@@ -12,6 +12,9 @@ spring:
     multipart:
       max-file-size: 10MB # 限制上传文件大小
       max-request-size: 10MB
+  sql:
+    init:
+      mode: always # 每次启动时初始化数据库表结构
 
 # MyBatis-Plus 配置
 mybatis-plus:
@@ -26,5 +29,6 @@ mybatis-plus:
       logic-not-delete-value: 1 # 未删除
 
 # 自定义配置：音频存储根路径
-audio:
-  storage-root-path: D:/audio_files/ # Windows 环境示例，Linux 可改为 /var/audio/
+app:
+  storage:
+    path: D:/audio_files/  # Windows 环境示例，Linux 可改为 /var/audio/
