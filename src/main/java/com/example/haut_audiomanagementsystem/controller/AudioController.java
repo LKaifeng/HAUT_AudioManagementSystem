@@ -1,5 +1,64 @@
 package com.example.haut_audiomanagementsystem.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.haut_audiomanagementsystem.entity.AudioAsset;
+import com.example.haut_audiomanagementsystem.service.AudioService;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+import java.io.File;
+
+@RestController
+@RequestMapping("/api/audio")
+@CrossOrigin(origins = "*") // 允许前端跨域访问
 public class AudioController {
-    
+
+    @Resource
+    private AudioService audioService;
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
+        try {
+            audioService.uploadAudio(file);
+            return ResponseEntity.ok("上传成功");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("上传失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<Page<AudioAsset>> list(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(audioService.listAudios(page, size));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> delete(@PathVariable Long id) {
+        try {
+            audioService.deleteAudio(id);
+            return ResponseEntity.ok("删除成功");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("删除失败");
+        }
+    }
+
+    @GetMapping("/stream/{id}")
+    public ResponseEntity<Resource> stream(@PathVariable Long id) {
+        File file = audioService.getAudioFile(id);
+        if (file == null || !file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("audio/mpeg"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
+                .body(resource);
+    }
 }
