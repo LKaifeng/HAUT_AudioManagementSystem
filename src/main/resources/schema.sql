@@ -17,4 +17,14 @@ CREATE TABLE IF NOT EXISTS sys_users (
     role_level INT DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
 
-INSERT IGNORE INTO sys_users (username, password, role_level) VALUES ('admin', '123456', 0);
+-- 初始测试账户数据
+-- 管理员账户 (role_level = 0): 拥有所有权限，包括删除功能
+INSERT IGNORE INTO sys_users (username, password, role_level) VALUES 
+    ('admin', '123456', 0),
+    ('manager', 'admin123', 0);
+
+-- 操作员账户 (role_level = 1): 只能上传和播放，不能删除
+INSERT IGNORE INTO sys_users (username, password, role_level) VALUES 
+    ('operator1', 'user123', 1),
+    ('operator2', 'test123', 1),
+    ('guest', 'guest123', 1);
