@@ -12,10 +12,14 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         button { cursor: pointer; padding: 5px 10px; margin-right: 5px; }
+        button:disabled { cursor: not-allowed; opacity: 0.5; }
         .btn-delete { background-color: #ff4d4d; color: white; border: none; }
         .btn-play { background-color: #4CAF50; color: white; border: none; }
         audio { height: 30px; vertical-align: middle; }
         input { margin-bottom: 10px; padding: 5px; width: 90%; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination button { margin: 0 5px; }
+        .page-info { margin: 0 15px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -59,12 +63,24 @@
                 <!-- 数据将通过 JS 插入 -->
             </tbody>
         </table>
+        
+        <!-- 分页控件 -->
+        <div class="pagination">
+            <button onclick="changePage(currentPage - 1)" id="prevBtn">上一页</button>
+            <span id="pageInfo" class="page-info">第 1 / 1 页</span>
+            <button onclick="changePage(currentPage + 1)" id="nextBtn">下一页</button>
+        </div>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8080/api';
+        const API_BASE = '/api';
         let currentUserToken = localStorage.getItem('token');
         let currentRole = localStorage.getItem('roleLevel');
+        
+        // 分页相关变量
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
 
         // 页面加载时检查登录状态
         window.onload = function() {
@@ -77,6 +93,11 @@
         async function handleLogin() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                document.getElementById('loginMsg').innerText = '请输入用户名和密码';
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/auth/login`, {
@@ -97,7 +118,7 @@
                     document.getElementById('loginMsg').innerText = data.msg || '登录失败';
                 }
             } catch (error) {
-                document.getElementById('loginMsg').innerText = '网络错误';
+                document.getElementById('loginMsg').innerText = '网络错误，请检查服务器是否启动';
             }
         }
 
@@ -121,82 +142,153 @@
 
         async function loadList() {
             try {
-                const response = await fetch(`${API_BASE}/audio/list?page=1&size=10`, {
+                const response = await fetch(`${API_BASE}/audio/list?page=${currentPage}&size=${pageSize}`, {
                     headers: getHeaders()
                 });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        alert('登录已过期，请重新登录');
+                        logout();
+                        return;
+                    }
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const data = await response.json();
                 const list = document.getElementById('audioList');
                 list.innerHTML = '';
 
-                data.records.forEach(item => {
-                    const row = document.createElement('tr');
-                    const date = new Date(item.createTime).toLocaleString();
-                    
-                    // 权限控制：只有 roleLevel 为 0 的管理员才显示删除按钮
-                    let deleteBtn = '';
-                    if (currentRole == 0) {
-                        deleteBtn = `<button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>`;
-                    }
+                // 更新分页信息
+                totalPages = data.pages || 1;
+                updatePaginationUI();
 
-                    row.innerHTML = `
-                        <td>${item.id}</td>
-                        <td>${item.fileName}</td>
-                        <td>${date}</td>
-                        <td>
-                            <audio controls src="${API_BASE}/audio/stream/${item.id}"></audio>
-                            ${deleteBtn}
-                        </td>
-                    `;
-                    list.appendChild(row);
-                });
+                if (data.records && data.records.length > 0) {
+                    data.records.forEach(item => {
+                        const row = document.createElement('tr');
+                        const date = new Date(item.createTime).toLocaleString();
+                        
+                        // 权限控制：只有 roleLevel 为 0 的管理员才显示删除按钮
+                        let deleteBtn = '';
+                        if (currentRole == 0) {
+                            deleteBtn = `<button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>`;
+                        }
+
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.fileName}</td>
+                            <td>${date}</td>
+                            <td>
+                                <audio controls src="${API_BASE}/audio/stream/${item.id}"></audio>
+                                ${deleteBtn}
+                            </td>
+                        `;
+                        list.appendChild(row);
+                    });
+                } else {
+                    list.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无音频数据</td></tr>';
+                }
             } catch (error) {
                 console.error('加载失败:', error);
+                document.getElementById('audioList').innerHTML = '<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">加载失败，请刷新重试</td></tr>';
             }
+        }
+
+        // 更新分页UI
+        function updatePaginationUI() {
+            document.getElementById('pageInfo').innerText = `第 ${currentPage} / ${totalPages} 页`;
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        // 切换页码
+        async function changePage(page) {
+            if (page < 1 || page > totalPages) {
+                return;
+            }
+            currentPage = page;
+            await loadList();
+            // 滚动到列表顶部
+            document.querySelector('h3').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
+            
             if (!file) {
                 alert('请选择文件');
+                return;
+            }
+
+            // 验证文件类型
+            const fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.mp3') && !fileName.endsWith('.wav')) {
+                alert('仅支持 mp3 或 wav 格式的文件');
+                return;
+            }
+
+            // 验证文件大小（10MB）
+            if (file.size > 10 * 1024 * 1024) {
+                alert('文件大小不能超过 10MB');
                 return;
             }
 
             const formData = new FormData();
             formData.append('file', file);
 
+            document.getElementById('uploadStatus').innerText = '上传中...';
+
             try {
                 const response = await fetch(`${API_BASE}/audio/upload`, {
                     method: 'POST',
-                    headers: getHeaders(), // 携带 Token
+                    headers: getHeaders(),
                     body: formData
                 });
+                
                 const result = await response.text();
-                document.getElementById('uploadStatus').innerText = result;
+                
                 if (response.ok) {
+                    document.getElementById('uploadStatus').innerText = '✅ ' + result;
+                    document.getElementById('uploadStatus').style.color = 'green';
                     fileInput.value = '';
-                    loadList();
+                    // 上传成功后回到第一页并刷新列表
+                    currentPage = 1;
+                    await loadList();
+                } else {
+                    document.getElementById('uploadStatus').innerText = '❌ 上传失败: ' + result;
+                    document.getElementById('uploadStatus').style.color = 'red';
                 }
             } catch (error) {
-                document.getElementById('uploadStatus').innerText = '上传出错';
+                document.getElementById('uploadStatus').innerText = '❌ 上传出错: ' + error.message;
+                document.getElementById('uploadStatus').style.color = 'red';
             }
         }
 
         async function deleteAudio(id) {
-            if (!confirm('确定要删除吗？')) return;
+            if (!confirm('确定要删除该音频吗？此操作不可恢复！')) {
+                return;
+            }
             
             try {
                 const response = await fetch(`${API_BASE}/audio/${id}`, {
                     method: 'DELETE',
-                    headers: getHeaders() // 携带 Token
+                    headers: getHeaders()
                 });
+                
                 if (response.ok) {
-                    loadList();
+                    // 如果当前页只有一条数据且不是第一页，则回到上一页
+                    const currentListLength = document.getElementById('audioList').rows.length;
+                    if (currentListLength === 1 && currentPage > 1) {
+                        currentPage--;
+                    }
+                    await loadList();
                 } else {
-                    alert('删除失败，可能权限不足或文件被占用');
+                    const errorMsg = await response.text();
+                    alert('删除失败: ' + errorMsg);
                 }
             } catch (error) {
-                alert('网络错误');
+                alert('网络错误: ' + error.message);
             }
         }
     </script>
