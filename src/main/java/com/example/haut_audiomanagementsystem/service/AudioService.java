@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.Date;
 import java.util.UUID;
 
@@ -36,6 +37,9 @@ public class AudioService {
 
         // 1. 生成唯一文件名 UUID.mp3
         String originalName = file.getOriginalFilename();
+        if (originalName == null || !originalName.matches(".*\\.(mp3|wav)$")) {
+            throw new IllegalArgumentException("仅支持 mp3 或 wav 格式");
+        }
         String extension = originalName != null ? originalName.substring(originalName.lastIndexOf(".")) : ".mp3";
         String uuidName = UUID.randomUUID().toString() + extension;
         
@@ -44,21 +48,34 @@ public class AudioService {
         if (!dir.exists()) dir.mkdirs();
 
         // 3. 保存物理文件
-        Path filePath = Paths.get(storagePath, uuidName);
-        Files.write(filePath, file.getBytes());
+       Path filePath = Paths.get(storagePath, uuidName);
+        // 优化：使用 transferTo 避免内存溢出
+        file.transferTo(filePath.toFile());
+
+        // 优化：计算 MD5
+        String md5 = calculateMD5(file.getBytes());
 
         // 4. 写入数据库
         AudioAsset asset = new AudioAsset();
         asset.setFileName(originalName);
         asset.setFilePath(filePath.toString());
         asset.setFileSize(file.getSize());
+        asset.setHashCode(md5);
         asset.setCreateTime(new Date());
         asset.setStatus(1);
-        // TODO: 计算 MD5 hash_code
+        // 计算 MD5 hash_code
         
         audioAssetMapper.insert(asset);
     }
-
+    private String calculateMD5(byte[] data) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(data);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) { return ""; }
+    }
     /**
      * 分页查询 (按创建时间降序)
      */
@@ -69,7 +86,7 @@ public class AudioService {
                .orderByDesc("create_time");
         return audioAssetMapper.selectPage(pageInfo, wrapper);
     }
-
+    
     /**
      * 删除音频 (物理+逻辑)
      */
@@ -78,14 +95,14 @@ public class AudioService {
         AudioAsset asset = audioAssetMapper.selectById(id);
         if (asset == null) return;
 
-        // 1. 删除物理文件
+        // 1. 先执行数据库逻辑删除 (MP 会根据配置自动 update status = 0)
+        audioAssetMapper.deleteById(id);
+
+        // 2. 再删除物理文件
         File file = new File(asset.getFilePath());
         if (file.exists()) {
             file.delete();
         }
-
-        // 2. 删除数据库记录
-        audioAssetMapper.deleteById(id);
     }
     
     /**
