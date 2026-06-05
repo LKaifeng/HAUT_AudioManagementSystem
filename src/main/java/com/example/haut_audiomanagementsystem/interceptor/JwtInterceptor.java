@@ -1,6 +1,7 @@
 package com.example.haut_audiomanagementsystem.interceptor;
 
 import com.example.haut_audiomanagementsystem.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -19,8 +20,10 @@ public class JwtInterceptor implements HandlerInterceptor {
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             try {
-                jwtUtil.parseToken(token.substring(7));
-                return true; // Token 合法，放行
+                Claims claims = jwtUtil.parseToken(token.substring(7));
+                request.setAttribute("claims", claims);
+                request.setAttribute("roleLevel", claims.get("roleLevel", Integer.class));
+                return true;
             } catch (Exception e) {
                 response.setStatus(401);
                 response.getWriter().write("Invalid Token");

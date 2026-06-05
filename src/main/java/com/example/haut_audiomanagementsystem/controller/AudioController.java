@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 
 @RestController
@@ -23,10 +23,16 @@ public class AudioController {
 
      @Autowired
     private AudioService audioService;
-
     @PostMapping("/upload")
-    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file,
+                                         HttpServletRequest request) {
         try {
+            Integer roleLevel = (Integer) request.getAttribute("roleLevel");
+            
+            if (roleLevel == null || (roleLevel != 0 && roleLevel != 1)) {
+                return ResponseEntity.status(403).body("权限不足：只有管理员和操作员可以上传音频");
+            }
+            
             audioService.uploadAudio(file);
             return ResponseEntity.ok("上传成功");
         } catch (Exception e) {
@@ -42,8 +48,15 @@ public class AudioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> delete(@PathVariable Long id) {
+    public ResponseEntity<String> delete(@PathVariable Long id,
+                                         HttpServletRequest request) {
         try {
+            Integer roleLevel = (Integer) request.getAttribute("roleLevel");
+            
+            if (roleLevel == null || roleLevel != 0) {
+                return ResponseEntity.status(403).body("权限不足：只有管理员可以删除音频");
+            }
+            
             audioService.deleteAudio(id);
             return ResponseEntity.ok("删除成功");
         } catch (Exception e) {
