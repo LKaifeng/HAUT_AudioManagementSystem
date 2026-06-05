@@ -5,69 +5,146 @@
     <title>音频管理系统</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .hidden { display: none; }
+        .login-box { border: 1px solid #ccc; padding: 30px; max-width: 300px; margin: 100px auto; border-radius: 8px; text-align: center; }
         .upload-section { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
-        button { cursor: pointer; padding: 5px 10px; }
+        button { cursor: pointer; padding: 5px 10px; margin-right: 5px; }
         .btn-delete { background-color: #ff4d4d; color: white; border: none; }
         .btn-play { background-color: #4CAF50; color: white; border: none; }
         audio { height: 30px; vertical-align: middle; }
+        input { margin-bottom: 10px; padding: 5px; width: 90%; }
     </style>
 </head>
 <body>
 
-    <h1>音频管理系统</h1>
-
-    <!-- 上传模块 -->
-    <div class="upload-section">
-        <h3>上传音频</h3>
-        <input type="file" id="fileInput" accept=".mp3,.wav">
-        <button onclick="uploadFile()">上传</button>
-        <p id="uploadStatus"></p>
+    <!-- 登录模块 -->
+    <div id="loginSection" class="login-box">
+        <h2>系统登录</h2>
+        <input type="text" id="username" placeholder="用户名 (admin)">
+        <input type="password" id="password" placeholder="密码 (123456)">
+        <button onclick="handleLogin()">登录</button>
+        <p id="loginMsg" style="color: red;"></p>
     </div>
 
-    <!-- 列表模块 -->
-    <h3>音频列表</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>文件名</th>
-                <th>上传时间</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="audioList">
-            <!-- 数据将通过 JS 插入 -->
-        </tbody>
-    </table>
+    <!-- 主功能模块 (登录后显示) -->
+    <div id="mainSection" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>音频管理系统</h1>
+            <button onclick="logout()" style="background-color: #666; color: white;">退出登录</button>
+        </div>
+
+        <!-- 上传模块 -->
+        <div class="upload-section">
+            <h3>上传音频</h3>
+            <input type="file" id="fileInput" accept=".mp3,.wav">
+            <button onclick="uploadFile()">上传</button>
+            <p id="uploadStatus"></p>
+        </div>
+
+        <!-- 列表模块 -->
+        <h3>音频列表</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>文件名</th>
+                    <th>上传时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="audioList">
+                <!-- 数据将通过 JS 插入 -->
+            </tbody>
+        </table>
+    </div>
 
     <script>
-        const API_BASE = 'http://localhost:8080/api/audio';
+        const API_BASE = 'http://localhost:8080/api';
+        let currentUserToken = localStorage.getItem('token');
+        let currentRole = localStorage.getItem('roleLevel');
 
-        // 页面加载时获取列表
-        window.onload = loadList;
+        // 页面加载时检查登录状态
+        window.onload = function() {
+            if (currentUserToken) {
+                showMainSection();
+                loadList();
+            }
+        };
+
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    currentUserToken = data.token;
+                    currentRole = data.roleLevel;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('roleLevel', data.roleLevel);
+                    showMainSection();
+                    loadList();
+                } else {
+                    document.getElementById('loginMsg').innerText = data.msg || '登录失败';
+                }
+            } catch (error) {
+                document.getElementById('loginMsg').innerText = '网络错误';
+            }
+        }
+
+        function showMainSection() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('mainSection').classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('roleLevel');
+            location.reload();
+        }
+
+        // 获取通用的请求头
+        function getHeaders() {
+            return {
+                'Authorization': 'Bearer ' + currentUserToken
+            };
+        }
 
         async function loadList() {
             try {
-                const response = await fetch(`${API_BASE}/list?page=1&size=10`);
+                const response = await fetch(`${API_BASE}/audio/list?page=1&size=10`, {
+                    headers: getHeaders()
+                });
                 const data = await response.json();
                 const list = document.getElementById('audioList');
                 list.innerHTML = '';
 
                 data.records.forEach(item => {
                     const row = document.createElement('tr');
-                    // 格式化时间
                     const date = new Date(item.createTime).toLocaleString();
                     
+                    // 权限控制：只有 roleLevel 为 0 的管理员才显示删除按钮
+                    let deleteBtn = '';
+                    if (currentRole == 0) {
+                        deleteBtn = `<button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>`;
+                    }
+
                     row.innerHTML = `
                         <td>${item.id}</td>
                         <td>${item.fileName}</td>
                         <td>${date}</td>
                         <td>
-                            <audio controls src="${API_BASE}/stream/${item.id}"></audio>
-                            <button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>
+                            <audio controls src="${API_BASE}/audio/stream/${item.id}"></audio>
+                            ${deleteBtn}
                         </td>
                     `;
                     list.appendChild(row);
@@ -89,15 +166,16 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch(`${API_BASE}/upload`, {
+                const response = await fetch(`${API_BASE}/audio/upload`, {
                     method: 'POST',
+                    headers: getHeaders(), // 携带 Token
                     body: formData
                 });
                 const result = await response.text();
                 document.getElementById('uploadStatus').innerText = result;
                 if (response.ok) {
-                    fileInput.value = ''; // 清空输入
-                    loadList(); // 刷新列表
+                    fileInput.value = '';
+                    loadList();
                 }
             } catch (error) {
                 document.getElementById('uploadStatus').innerText = '上传出错';
@@ -108,11 +186,12 @@
             if (!confirm('确定要删除吗？')) return;
             
             try {
-                const response = await fetch(`${API_BASE}/${id}`, {
-                    method: 'DELETE'
+                const response = await fetch(`${API_BASE}/audio/${id}`, {
+                    method: 'DELETE',
+                    headers: getHeaders() // 携带 Token
                 });
                 if (response.ok) {
-                    loadList(); // 刷新列表
+                    loadList();
                 } else {
                     alert('删除失败，可能权限不足或文件被占用');
                 }
