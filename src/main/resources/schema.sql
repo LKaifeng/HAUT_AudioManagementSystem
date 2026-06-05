@@ -8,3 +8,13 @@ CREATE TABLE IF NOT EXISTS audio_assets (
     status INT DEFAULT 1 COMMENT '状态: 1正常, 0删除',
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='音频资产表';
+
+
+CREATE TABLE IF NOT EXISTS sys_users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE,
+    password VARCHAR(100),
+    role_level INT DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+
+INSERT IGNORE INTO sys_users (username, password, role_level) VALUES ('admin', '123456', 0);
