@@ -32,3 +32,8 @@ mybatis-plus:
 app:
   storage:
     path: D:/audio_files/  # Windows 环境示例，Linux 可改为 /var/audio/
+  jwt:
+    # JWT密钥（生产环境应使用更复杂的密钥并通过环境变量注入）
+    secret: HautAudioManagementSystem2024SecretKeyForJWTTokenGeneration!@#$%^&*
+    # Token过期时间（毫秒），默认24小时
+    expiration: 86400000
