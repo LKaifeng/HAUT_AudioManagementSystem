@@ -14,7 +14,7 @@ spring:
       max-request-size: 10MB
   sql:
     init:
-      mode: always # 每次启动时初始化数据库表结构
+      mode: never # 每次启动时初始化数据库表结构
 
 # MyBatis-Plus 配置
 mybatis-plus:
