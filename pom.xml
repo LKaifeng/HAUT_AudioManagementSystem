@@ -51,12 +51,18 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 5. ORM 框架: 推荐使用 MyBatis-Plus 简化 CRUD 和分页 (替代原生 MyBatis 和 JPA) -->
-        <!-- 文档中提到分页查询和 CRUD，MP 能极大减少样板代码 -->
+        <!-- 5. ORM 框架: 针对 Spring Boot 3 的专用 Starter -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>${mybatis-plus.version}</version>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.7</version>
+        </dependency>
+
+        <!-- 强制覆盖 mybatis-spring 版本，确保为 3.0.3+ 以支持 Spring Boot 3 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>3.0.3</version>
         </dependency>
 
         <!-- 6. JWT 鉴权支持 (用于安全与认证模块) -->
@@ -92,12 +98,7 @@
             <scope>test</scope>
         </dependency>
         
-        <!-- 如果需要 MyBatis 特定的测试支持 -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.7</version>
-        </dependency>
+        
     </dependencies>
 
     <build>
