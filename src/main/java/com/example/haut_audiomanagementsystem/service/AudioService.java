@@ -12,8 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.Date;
 import java.util.UUID;
@@ -47,17 +49,19 @@ public class AudioService {
         if (!dir.exists()) dir.mkdirs();
 
         // 3. 保存物理文件
-       Path filePath = Paths.get(storagePath, uuidName);
-        // 优化：使用 transferTo 避免内存溢出
-        file.transferTo(filePath.toFile());
+       Path targetPath = Paths.get(storagePath, uuidName).normalize();
 
-        // 优化：计算 MD5
-        String md5 = calculateMD5(file.getBytes());
+        // 使用 Files.copy 替代 transferTo
+        Files.createDirectories(targetPath.getParent());
+        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        // 从已保存的文件计算 MD5，而不是从 MultipartFile
+        String md5 = calculateMD5FromFile(targetPath.toFile());
 
         // 4. 写入数据库
         AudioAsset asset = new AudioAsset();
         asset.setFileName(originalName);
-        asset.setFilePath(filePath.toString());
+        asset.setFilePath(targetPath.toString());
         asset.setFileSize(file.getSize());
         asset.setHashCode(md5);
         asset.setCreateTime(new Date());
@@ -66,14 +70,17 @@ public class AudioService {
         
         audioAssetMapper.insert(asset);
     }
-    private String calculateMD5(byte[] data) {
+    private String calculateMD5FromFile(File file) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] digest = md.digest(data);
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
+            byte[] digest = md.digest(fileBytes);
             StringBuilder sb = new StringBuilder();
             for (byte b : digest) sb.append(String.format("%02x", b));
             return sb.toString();
-        } catch (Exception e) { return ""; }
+        } catch (Exception e) { 
+            throw new RuntimeException("计算文件MD5失败", e);
+        }
     }
     /**
      * 分页查询 (按创建时间降序)
