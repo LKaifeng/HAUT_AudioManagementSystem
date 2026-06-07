@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/audio")
@@ -46,7 +47,28 @@ public class AudioController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(audioService.listAudios(page, size));
     }
-
+    @PutMapping("/{id}")
+    public ResponseEntity<String> update(@PathVariable Long id,
+                                        @RequestBody Map<String, String> updateData,
+                                        HttpServletRequest request) {
+        try {
+            Integer roleLevel = (Integer) request.getAttribute("roleLevel");
+            
+            if (roleLevel == null || roleLevel != 0) {
+                return ResponseEntity.status(403).body("权限不足：只有管理员可以修改音频");
+            }
+            
+            String newFileName = updateData.get("fileName");
+            if (newFileName == null || newFileName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("文件名不能为空");
+            }
+            
+            audioService.updateAudioName(id, newFileName.trim());
+            return ResponseEntity.ok("修改成功");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("修改失败: " + e.getMessage());
+        }
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable Long id,
                                          HttpServletRequest request) {
@@ -70,10 +92,26 @@ public class AudioController {
         if (file == null || !file.exists()) {
             return ResponseEntity.notFound().build();
         }
+        
         Resource resource = new FileSystemResource(file);
+        String contentType = getContentType(file.getName());
+        
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
+                .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
+                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
                 .body(resource);
+    }
+    
+    private String getContentType(String fileName) {
+        if (fileName.toLowerCase().endsWith(".mp3")) {
+            return "audio/mpeg";
+        } else if (fileName.toLowerCase().endsWith(".wav")) {
+            return "audio/wav";
+        }
+        return "application/octet-stream";
     }
 }

@@ -61,12 +61,11 @@ public class AudioService {
         // 4. 写入数据库
         AudioAsset asset = new AudioAsset();
         asset.setFileName(originalName);
-        asset.setFilePath(targetPath.toString());
+        asset.setFilePath(targetPath.toAbsolutePath().toString());
         asset.setFileSize(file.getSize());
         asset.setHashCode(md5);
         asset.setCreateTime(new Date());
         asset.setStatus(1);
-        // 计算 MD5 hash_code
         
         audioAssetMapper.insert(asset);
     }
@@ -110,13 +109,30 @@ public class AudioService {
             file.delete();
         }
     }
-    
+    /**
+     * 修改音频名称
+     */
+    @Transactional
+    public void updateAudioName(Long id, String newFileName) {
+        AudioAsset asset = audioAssetMapper.selectById(id);
+        if (asset == null || asset.getStatus() != 1) {
+            throw new IllegalArgumentException("音频不存在");
+        }
+        asset.setFileName(newFileName);
+        audioAssetMapper.updateById(asset);
+    }
     /**
      * 获取文件流 (用于播放)
      */
     public File getAudioFile(Long id) {
         AudioAsset asset = audioAssetMapper.selectById(id);
-        if (asset == null) return null;
-        return new File(asset.getFilePath());
+        if (asset == null || asset.getStatus() != 1) {
+            return null;
+        }
+        File file = new File(asset.getFilePath());
+        if (!file.exists()) {
+            return null;
+        }
+        return file;
     }
 }
