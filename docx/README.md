@@ -196,9 +196,6 @@
   
 
 ## 快速开始
-
-  
-
 ### 环境要求
 
   
@@ -313,11 +310,16 @@ java -jar target/HAUT_AudioManagementSystem-0.0.1-SNAPSHOT.jar
 
 ```
 
-  
+  访问以下地址验证：
+
+- **前端页面**: [http://localhost:8080](http://localhost:8080/)
 
 ---
 
   
+
+  
+
 
 ## 项目结构
 
