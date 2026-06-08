@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -98,15 +99,26 @@ public class AudioService {
     @Transactional
     public void deleteAudio(Long id) {
         AudioAsset asset = audioAssetMapper.selectById(id);
-        if (asset == null) return;
+        if (asset == null) {
+            throw new IllegalArgumentException("音频不存在");
+        }
 
-        // 1. 先执行数据库逻辑删除 (MP 会根据配置自动 update status = 0)
-        audioAssetMapper.deleteById(id);
+        // 1. 先保存文件路径，因为逻辑删除后可能无法获取
+        String filePath = asset.getFilePath();
 
-        // 2. 再删除物理文件
-        File file = new File(asset.getFilePath());
+        // 2. 执行数据库逻辑删除 (MP 会根据配置自动 update status = 0)
+        int result = audioAssetMapper.deleteById(id);
+        if (result == 0) {
+            throw new RuntimeException("删除失败，记录不存在");
+        }
+
+        // 3. 再删除物理文件
+        File file = new File(filePath);
         if (file.exists()) {
-            file.delete();
+            boolean deleted = file.delete();
+            if (!deleted) {
+                System.err.println("警告：物理文件删除失败: " + filePath);
+            }
         }
     }
     /**
@@ -121,18 +133,54 @@ public class AudioService {
         asset.setFileName(newFileName);
         audioAssetMapper.updateById(asset);
     }
-    /**
+     /**
+     * 清理无效记录（文件不存在但数据库仍有记录）
+     */
+    @Transactional
+    public int cleanupInvalidRecords() {
+        List<AudioAsset> allAudios = audioAssetMapper.selectList(
+            new QueryWrapper<AudioAsset>().eq("status", 1)
+        );
+        
+        int cleanedCount = 0;
+        for (AudioAsset asset : allAudios) {
+            File file = new File(asset.getFilePath());
+            if (!file.exists()) {
+                audioAssetMapper.deleteById(asset.getId());
+                cleanedCount++;
+                System.out.println("已清理无效记录 ID: " + asset.getId() + ", 文件名: " + asset.getFileName());
+            }
+        }
+        
+        return cleanedCount;
+    }
+     /**
+     * 获取音频资产信息
+     */
+    public AudioAsset getAudioAssetById(Long id) {
+        return audioAssetMapper.selectById(id);
+    }
+     /**
      * 获取文件流 (用于播放)
      */
     public File getAudioFile(Long id) {
         AudioAsset asset = audioAssetMapper.selectById(id);
-        if (asset == null || asset.getStatus() != 1) {
+        if (asset == null) {
+            System.err.println("数据库中未找到音频记录，ID: " + id);
             return null;
         }
+        
+        if (asset.getStatus() != 1) {
+            System.err.println("音频状态异常，ID: " + id + ", 状态: " + asset.getStatus());
+            return null;
+        }
+        
         File file = new File(asset.getFilePath());
         if (!file.exists()) {
+            System.err.println("物理文件不存在，ID: " + id + ", 路径: " + asset.getFilePath());
             return null;
         }
+        
         return file;
     }
 }
