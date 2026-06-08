@@ -2,91 +2,963 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>音频管理系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAUT Audio System</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
-        .hidden { display: none; }
-        .login-box { border: 1px solid #ccc; padding: 30px; max-width: 300px; margin: 100px auto; border-radius: 8px; text-align: center; }
-        .upload-section { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        button { cursor: pointer; padding: 5px 10px; margin-right: 5px; }
-        button:disabled { cursor: not-allowed; opacity: 0.5; }
-        .btn-delete { background-color: #ff4d4d; color: white; border: none; }
-        .btn-play { background-color: #4CAF50; color: white; border: none; }
-        audio { height: 30px; vertical-align: middle; }
-        input { margin-bottom: 10px; padding: 5px; width: 90%; }
-        .pagination { margin-top: 20px; text-align: center; }
-        .pagination button { margin: 0 5px; }
-        .page-info { margin: 0 15px; font-weight: bold; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+            color: white;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #475569;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #3b82f6;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, #dbeafe 0%, #eff6ff 100%);
+            color: #2563eb;
+            border-left-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+        }
+
+        .nav-icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background-color: #ffffff;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .btn-logout {
+            width: 100%;
+            padding: 10px;
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background-color: #fecaca;
+        }
+
+        /* 右侧主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+
+        .content-header {
+            padding: 20px 32px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .content-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        /* 登录页面 */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .login-box p {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* 上传区域 */
+        .upload-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .upload-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 32px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background-color: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .btn-upload {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upload-status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .upload-status.success {
+            display: block;
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .upload-status.error {
+            display: block;
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .upload-status.uploading {
+            display: block;
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* 上传进度条 */
+        .progress-container {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        /* 音频列表 */
+        .audio-list-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .audio-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .audio-table thead {
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+            color: white;
+        }
+
+        .audio-table th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .audio-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .audio-table tbody tr:hover {
+            background-color: #f8fafc;
+            transition: background-color 0.2s ease;
+        }
+
+        .audio-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .audio-player {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .audio-player::-webkit-media-controls-panel {
+            background-color: #f8fafc;
+        }
+
+        .audio-player::-webkit-media-controls-play-button {
+            background-color: #10b981;
+            border-radius: 50%;
+        }
+
+        .audio-player::-webkit-media-controls-timeline {
+            background-color: #e2e8f0;
+            border-radius: 4px;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .btn-edit {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .btn-edit:hover {
+            background-color: #bfdbfe;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-delete:hover {
+            background-color: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        .edit-input {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .btn-save {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .btn-save:hover {
+            background-color: #a7f3d0;
+        }
+
+        .btn-cancel {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-cancel:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 12px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #374151;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 板块内容 */
+        .section-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 用户管理 */
+        .user-management {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-management h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .user-list {
+            margin-top: 16px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .user-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-item-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .user-item-info {
+            flex: 1;
+        }
+
+        .user-item-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .user-item-role {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .role-operator {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        /* 文件信息展示 */
+        .file-info {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .file-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .file-info-label {
+            color: #64748b;
+        }
+
+        .file-info-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 登录模块 -->
-    <div id="loginSection" class="login-box">
-        <h2>系统登录</h2>
-        <input type="text" id="username" placeholder="用户名 (admin)">
-        <input type="password" id="password" placeholder="密码 (123456)">
-        <button onclick="handleLogin()">登录</button>
-        <p id="loginMsg" style="color: red;"></p>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <h2>🎵 HAUT Audio System</h2>
+            <p>音频管理系统 - 请登录以继续</p>
+            
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" class="form-input" placeholder="请输入用户名">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" class="form-input" placeholder="请输入密码">
+            </div>
+            
+            <button onclick="handleLogin()" class="btn-primary">登录</button>
+            <p id="loginMsg" class="error-message"></p>
+        </div>
     </div>
 
-    <!-- 主功能模块 (登录后显示) -->
-    <div id="mainSection" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>音频管理系统</h1>
-            <button onclick="logout()" style="background-color: #666; color: white;">退出登录</button>
-        </div>
+    <!-- 主应用容器 -->
+    <div id="appContainer" class="app-container hidden">
+        <!-- 左侧侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🎵 HAUT Audio</h1>
+                <p>音频管理系统</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-item active" data-section="library" onclick="switchSection('library')">
+                        <span class="nav-icon">🎵</span>
+                        <span>音频乐库</span>
+                    </div>
+                    <div class="nav-item" data-section="upload" onclick="switchSection('upload')">
+                        <span class="nav-icon">📤</span>
+                        <span>上传音频</span>
+                    </div>
+                    <div class="nav-item" data-section="users" onclick="switchSection('users')">
+                        <span class="nav-icon">👤</span>
+                        <span>用户管理</span>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userNameDisplay">Admin</div>
+                        <div class="user-role" id="userRoleDisplay">管理员</div>
+                    </div>
+                </div>
+                <button onclick="logout()" class="btn-logout">退出登录</button>
+            </div>
+        </aside>
 
-        <!-- 上传模块 -->
-        <div class="upload-section">
-            <h3>上传音频</h3>
-            <input type="file" id="fileInput" accept=".mp3,.wav">
-            <button onclick="uploadFile()">上传</button>
-            <p id="uploadStatus"></p>
-        </div>
+        <!-- 右侧主内容区 -->
+        <main class="main-content">
+            <!-- 音频乐库板块 -->
+            <div id="section-library" class="section-content active">
+                <div class="content-header">
+                    <h2 class="content-title">🎵 音频乐库</h2>
+                    <p class="content-subtitle">管理和播放您的音频文件</p>
+                </div>
+                
+                <div class="content-body">
+                    <div class="audio-list-container">
+                        <table class="audio-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>文件名</th>
+                                    <th>文件大小</th>
+                                    <th>上传时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audioList">
+                                <!-- 数据将通过 JS 插入 -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- 分页控件 -->
+                        <div class="pagination">
+                            <button onclick="changePage(currentPage - 1)" id="prevBtn">上一页</button>
+                            <span id="pageInfo" class="page-info">第 1 / 1 页</span>
+                            <button onclick="changePage(currentPage + 1)" id="nextBtn">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- 列表模块 -->
-        <h3>音频列表</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>文件名</th>
-                    <th>上传时间</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="audioList">
-                <!-- 数据将通过 JS 插入 -->
-            </tbody>
-        </table>
-        
-        <!-- 分页控件 -->
-        <div class="pagination">
-            <button onclick="changePage(currentPage - 1)" id="prevBtn">上一页</button>
-            <span id="pageInfo" class="page-info">第 1 / 1 页</span>
-            <button onclick="changePage(currentPage + 1)" id="nextBtn">下一页</button>
-        </div>
+            <!-- 上传音频板块 -->
+            <div id="section-upload" class="section-content">
+                <div class="content-header">
+                    <h2 class="content-title">📤 上传音频</h2>
+                    <p class="content-subtitle">上传新的音频文件到系统</p>
+                </div>
+                
+                <div class="content-body">
+                    <div class="upload-card">
+                        <h3>选择文件</h3>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-text">拖拽文件到此处，或点击选择文件</div>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="fileInput" class="file-input" accept=".mp3,.wav" onchange="handleFileSelect(event)">
+                                <button class="btn-upload">选择文件</button>
+                            </div>
+                            <div style="margin-top: 12px; font-size: 12px; color: #94a3b8;">
+                                支持格式：MP3, WAV | 最大文件大小：10MB
+                            </div>
+                        </div>
+                        
+                        <!-- 文件信息展示 -->
+                        <div id="fileInfo" class="file-info">
+                            <div class="file-info-item">
+                                <span class="file-info-label">文件名：</span>
+                                <span class="file-info-value" id="fileName">-</span>
+                            </div>
+                            <div class="file-info-item">
+                                <span class="file-info-label">文件大小：</span>
+                                <span class="file-info-value" id="fileSize">-</span>
+                            </div>
+                            <div class="file-info-item">
+                                <span class="file-info-label">文件类型：</span>
+                                <span class="file-info-value" id="fileType">-</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 上传进度条 -->
+                        <div id="progressContainer" class="progress-container">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressBar"></div>
+                            </div>
+                            <div class="progress-text" id="progressText">准备上传...</div>
+                        </div>
+                        
+                        <div id="uploadStatus" class="upload-status"></div>
+                        <div style="margin-top: 16px; text-align: right;">
+                            <button onclick="uploadFile()" class="btn-upload" id="uploadBtn" disabled>开始上传</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理板块 -->
+            <div id="section-users" class="section-content">
+                <div class="content-header">
+                    <h2 class="content-title">👤 用户管理</h2>
+                    <p class="content-subtitle">查看系统用户信息</p>
+                </div>
+                
+                <div class="content-body">
+                    <div class="user-management">
+                        <h3>系统用户列表</h3>
+                        <div class="user-list" id="userList">
+                            <!-- 用户列表将通过 JS 插入 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
         const API_BASE = '/api';
         let currentUserToken = localStorage.getItem('token');
-        let currentRole = localStorage.getItem('roleLevel');
+        let currentRole = parseInt(localStorage.getItem('roleLevel')) || 1;
+        let currentUsername = localStorage.getItem('username') || '';
         
         // 分页相关变量
         let currentPage = 1;
         let pageSize = 10;
         let totalPages = 1;
+        
+        // 当前选中的文件
+        let selectedFile = null;
 
         // 页面加载时检查登录状态
         window.onload = function() {
             if (currentUserToken) {
-                showMainSection();
-                loadList();
+                showApp();
             }
         };
 
@@ -109,11 +981,12 @@
                 
                 if (data.code === 200) {
                     currentUserToken = data.token;
-                    currentRole = data.roleLevel;
+                    currentRole = parseInt(data.roleLevel);
+                    currentUsername = username;
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('roleLevel', data.roleLevel);
-                    showMainSection();
-                    loadList();
+                    localStorage.setItem('username', username);
+                    showApp();
                 } else {
                     document.getElementById('loginMsg').innerText = data.msg || '登录失败';
                 }
@@ -122,15 +995,52 @@
             }
         }
 
-        function showMainSection() {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('mainSection').classList.remove('hidden');
+        function showApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            
+            // 更新用户信息
+            document.getElementById('userNameDisplay').textContent = currentUsername;
+            document.getElementById('userRoleDisplay').textContent = currentRole === 0 ? '管理员' : '操作员';
+            document.getElementById('userAvatar').textContent = currentUsername.charAt(0).toUpperCase();
+            
+            // 加载音频列表
+            loadList();
+            loadUserList();
         }
 
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('roleLevel');
+            localStorage.removeItem('username');
             location.reload();
+        }
+
+        // 切换板块
+        function switchSection(sectionName) {
+            // 隐藏所有板块
+            document.querySelectorAll('.section-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 移除所有导航项的激活状态
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示选中的板块
+            document.getElementById(`section-${sectionName}`).classList.add('active');
+            
+            // 激活对应的导航项
+            const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+            if (navItem) {
+                navItem.classList.add('active');
+            }
+            
+            // 如果切换到音频乐库，刷新列表
+            if (sectionName === 'library') {
+                loadList();
+            }
         }
 
         // 获取通用的请求头
@@ -167,30 +1077,104 @@
                     data.records.forEach(item => {
                         const row = document.createElement('tr');
                         const date = new Date(item.createTime).toLocaleString();
+                        const fileSize = formatFileSize(item.fileSize);
                         
-                        // 权限控制：只有 roleLevel 为 0 的管理员才显示删除按钮
-                        let deleteBtn = '';
-                        if (currentRole == 0) {
-                            deleteBtn = `<button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>`;
+                        // 权限控制：只有 roleLevel 为 0 的管理员才显示删除和编辑按钮
+                        let actionBtns = '';
+                        if (currentRole === 0) {
+                            actionBtns = `
+                                <button class="btn-edit" onclick="startEdit(${item.id}, '${item.fileName}')">编辑</button>
+                                <button class="btn-delete" onclick="deleteAudio(${item.id})">删除</button>
+                            `;
                         }
 
                         row.innerHTML = `
                             <td>${item.id}</td>
-                            <td>${item.fileName}</td>
+                            <td id="name-${item.id}"><span class="status-indicator"></span>${item.fileName}</td>
+                            <td>${fileSize}</td>
                             <td>${date}</td>
-                            <td>
-                                <audio controls src="${API_BASE}/audio/stream/${item.id}"></audio>
-                                ${deleteBtn}
+                            <td id="actions-${item.id}">
+                                <audio controls class="audio-player" src="${API_BASE}/audio/stream/${item.id}" onerror="handleAudioError(this, '${item.fileName}')"></audio>
+                                ${actionBtns}
                             </td>
                         `;
                         list.appendChild(row);
                     });
                 } else {
-                    list.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无音频数据</td></tr>';
+                    list.innerHTML = `
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">🎵</div>
+                                    <div class="empty-state-text">暂无音频数据</div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
                 }
             } catch (error) {
                 console.error('加载失败:', error);
-                document.getElementById('audioList').innerHTML = '<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">加载失败，请刷新重试</td></tr>';
+                document.getElementById('audioList').innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">❌</div>
+                                <div class="empty-state-text">加载失败，请刷新重试</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 开始编辑
+        function startEdit(id, currentName) {
+            const nameCell = document.getElementById(`name-${id}`);
+            const actionsCell = document.getElementById(`actions-${id}`);
+            
+            nameCell.innerHTML = `<input type="text" class="edit-input" id="edit-name-${id}" value="${currentName}">`;
+            actionsCell.innerHTML = `
+                <button class="btn-save" onclick="saveEdit(${id})">保存</button>
+                <button class="btn-cancel" onclick="loadList()">取消</button>
+            `;
+        }
+
+        // 保存编辑
+        async function saveEdit(id) {
+            const newName = document.getElementById(`edit-name-${id}`).value.trim();
+            
+            if (!newName) {
+                alert('文件名不能为空');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/audio/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fileName: newName })
+                });
+                
+                if (response.ok) {
+                    await loadList();
+                } else {
+                    const errorMsg = await response.text();
+                    alert('修改失败: ' + errorMsg);
+                }
+            } catch (error) {
+                alert('网络错误: ' + error.message);
             }
         }
 
@@ -208,61 +1192,148 @@
             }
             currentPage = page;
             await loadList();
-            // 滚动到列表顶部
-            document.querySelector('h3').scrollIntoView({ behavior: 'smooth' });
         }
 
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('uploadBtn').disabled = false;
+                document.querySelector('.upload-text').textContent = `已选择: ${file.name}`;
+                
+                // 显示文件信息
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileType').textContent = file.type || '未知';
+                document.getElementById('fileInfo').classList.add('show');
+            }
+        }
+
+        // 拖拽上传
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
             
-            if (!file) {
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                document.getElementById('uploadBtn').disabled = false;
+                document.querySelector('.upload-text').textContent = `已选择: ${file.name}`;
+                
+                // 显示文件信息
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileType').textContent = file.type || '未知';
+                document.getElementById('fileInfo').classList.add('show');
+            }
+        });
+
+        async function uploadFile() {
+            if (!selectedFile) {
                 alert('请选择文件');
                 return;
             }
 
             // 验证文件类型
-            const fileName = file.name.toLowerCase();
+            const fileName = selectedFile.name.toLowerCase();
             if (!fileName.endsWith('.mp3') && !fileName.endsWith('.wav')) {
                 alert('仅支持 mp3 或 wav 格式的文件');
                 return;
             }
 
             // 验证文件大小（10MB）
-            if (file.size > 10 * 1024 * 1024) {
+            if (selectedFile.size > 10 * 1024 * 1024) {
                 alert('文件大小不能超过 10MB');
                 return;
             }
 
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', selectedFile);
 
-            document.getElementById('uploadStatus').innerText = '上传中...';
+            const statusEl = document.getElementById('uploadStatus');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            // 显示进度条
+            progressContainer.classList.add('show');
+            uploadBtn.disabled = true;
+            statusEl.className = 'upload-status uploading';
+            statusEl.textContent = '正在上传...';
+            progressBar.style.width = '0%';
+            progressText.textContent = '准备上传...';
 
             try {
-                const response = await fetch(`${API_BASE}/audio/upload`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: formData
+                // 使用 XMLHttpRequest 来监听上传进度
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const percentComplete = Math.round((e.loaded / e.total) * 100);
+                            progressBar.style.width = percentComplete + '%';
+                            progressText.textContent = `上传进度: ${percentComplete}%`;
+                        }
+                    });
+                    
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.responseText);
+                        } else {
+                            reject(new Error(xhr.statusText));
+                        }
+                    });
+                    
+                    xhr.addEventListener('error', () => {
+                        reject(new Error('网络错误'));
+                    });
+                    
+                    xhr.open('POST', `${API_BASE}/audio/upload`);
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + currentUserToken);
+                    xhr.send(formData);
                 });
+
+                statusEl.className = 'upload-status success';
+                statusEl.textContent = '✅ 上传成功！';
+                progressText.textContent = '上传完成！';
+                progressBar.style.width = '100%';
                 
-                const result = await response.text();
+                selectedFile = null;
+                document.getElementById('fileInput').value = '';
+                document.getElementById('uploadBtn').disabled = true;
+                document.querySelector('.upload-text').textContent = '拖拽文件到此处，或点击选择文件';
+                document.getElementById('fileInfo').classList.remove('show');
                 
-                if (response.ok) {
-                    document.getElementById('uploadStatus').innerText = '✅ ' + result;
-                    document.getElementById('uploadStatus').style.color = 'green';
-                    fileInput.value = '';
-                    // 上传成功后回到第一页并刷新列表
-                    currentPage = 1;
-                    await loadList();
-                } else {
-                    document.getElementById('uploadStatus').innerText = '❌ 上传失败: ' + result;
-                    document.getElementById('uploadStatus').style.color = 'red';
-                }
+                // 切换到音频乐库并刷新
+                setTimeout(() => {
+                    progressContainer.classList.remove('show');
+                    document.querySelector('.nav-item[data-section="library"]').click();
+                }, 1500);
             } catch (error) {
-                document.getElementById('uploadStatus').innerText = '❌ 上传出错: ' + error.message;
-                document.getElementById('uploadStatus').style.color = 'red';
+                statusEl.className = 'upload-status error';
+                statusEl.textContent = '❌ 上传失败: ' + error.message;
+                progressText.textContent = '上传失败';
+                uploadBtn.disabled = false;
             }
+        }
+
+        function handleAudioError(audioElement, fileName) {
+            console.error('音频加载失败:', fileName);
+            audioElement.parentElement.innerHTML = '<span style="color: #dc2626;">⚠️ 音频加载失败</span>';
         }
 
         async function deleteAudio(id) {
@@ -290,6 +1361,33 @@
             } catch (error) {
                 alert('网络错误: ' + error.message);
             }
+        }
+
+        // 加载用户列表
+        function loadUserList() {
+            const userList = document.getElementById('userList');
+            
+            // 模拟用户数据（实际应该从后端获取）
+            const users = [
+                { name: 'admin', role: 0, roleText: '管理员' },
+                { name: 'manager', role: 0, roleText: '管理员' },
+                { name: 'operator1', role: 1, roleText: '操作员' },
+                { name: 'operator2', role: 1, roleText: '操作员' },
+                { name: 'guest', role: 1, roleText: '操作员' }
+            ];
+            
+            userList.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <div class="user-item-avatar">${user.name.charAt(0).toUpperCase()}</div>
+                    <div class="user-item-info">
+                        <div class="user-item-name">${user.name}</div>
+                        <div class="user-item-role">${user.roleText}</div>
+                    </div>
+                    <span class="role-badge ${user.role === 0 ? 'role-admin' : 'role-operator'}">
+                        ${user.roleText}
+                    </span>
+                </div>
+            `).join('');
         }
     </script>
 </body>
