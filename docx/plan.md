@@ -1,25 +1,22 @@
-⚠️ 中等问题
-1. AudioService中的MD5计算性能问题
-位置: AudioService.java 第56行
-问题: file.getBytes()会将整个文件加载到内存中，大文件会导致OOM
-建议: 使用InputStream流式计算MD5
-1. 删除音频时的逻辑删除配置问题
-位置: AudioService.java 第87行
-问题: 使用了audioAssetMapper.deleteById(id)，根据配置应该执行逻辑删除（更新status=0），但紧接着又删除了物理文件
-风险: 如果逻辑删除失败，物理文件已被删除，数据不一致
-💡 优化建议
-1. AudioController的上传接口缺少权限控制
-位置: AudioController.java 第26-33行
-问题: 没有基于角色的权限控制，操作员和管理员都能上传
-建议: 添加角色验证
-1. 前端硬编码API地址
-位置: index.html 第65行
-问题: const API_BASE = 'http://localhost:8080/api';
-建议: 使用相对路径 /api
-1. JwtUtil的密钥每次重启都会变化
-位置: JwtUtil.java 第16行
-问题: Keys.secretKeyFor()每次应用启动都生成新密钥，导致之前颁发的token全部失效
-建议: 将密钥配置到application.yml中
-1. 未使用的导入
-位置: AudioController.java 第17行
-问题: import java.io.File; 虽然被使用了，但可以优化
+# 临时计划
+1️. 批量删除功能 (高优先级)
+当前只支持单个删除,需要添加批量删除接口。
+2️. 操作员注册功能 (中优先级)
+前端缺少注册界面
+后端已有 /api/auth/register 接口但前端未使用
+需要添加工具类处理密码加密
+3️. 其他优化点
+MD5计算性能优化(大文件会占用大量内存)
+路径安全检查增强
+统一响应格式封装
+音频元数据提取(时长、比特率等)
+4.添加搜素音频的功能
+搜索音频功能（根据关键词、标签等）
+5.添加音频评论功能
+6.添加音频点赞功能
+7.添加音频收藏功能
+8.音频根据点赞收藏进行排序
+9.前端添加界面
+10.日志（较困难可选）
+日志记录功能（如用户操作、系统错误等）
+日志级别设置（如DEBUG、INFO、WARNING、ERROR、CRITICAL）
