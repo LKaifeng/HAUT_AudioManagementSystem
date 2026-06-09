@@ -18,6 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
                 
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/login")
+                .excludePathPatterns("/api/auth/register")
                 .excludePathPatterns("/api/audio/stream/**");
     }
 }
