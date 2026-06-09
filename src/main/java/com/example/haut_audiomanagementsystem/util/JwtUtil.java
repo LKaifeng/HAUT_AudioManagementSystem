@@ -14,10 +14,10 @@ import java.util.Map;
 
 @Component
 public class JwtUtil {
-    
+
     @Value("${app.jwt.secret}")
     private String secretKey;
-    
+
     @Value("${app.jwt.expiration}")
     private long expiration;
 
@@ -28,13 +28,14 @@ public class JwtUtil {
 
     /**
      * 生成 Token
-     * @param username 用户名
+     * 
+     * @param username  用户名
      * @param roleLevel 角色等级 (0:管理员, 1:操作员)
      */
     public String generateToken(String username, Integer roleLevel) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roleLevel", roleLevel);
-        
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)

@@ -31,7 +31,7 @@ mybatis-plus:
 # 自定义配置：音频存储根路径
 app:
   storage:
-    path: D:/audio_files/  # Windows 环境示例，Linux 可改为 /var/audio/
+    path: D:/audio_files/ # Windows 环境示例，Linux 可改为 /var/audio/
   jwt:
     # JWT密钥（生产环境应使用更复杂的密钥并通过环境变量注入）
     secret: HautAudioManagementSystem2024SecretKeyForJWTTokenGeneration!@#$%^&*

@@ -35,7 +35,8 @@ public class AudioService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void uploadAudio(MultipartFile file) throws IOException {
-        if (file.isEmpty()) throw new IllegalArgumentException("文件为空");
+        if (file.isEmpty())
+            throw new IllegalArgumentException("文件为空");
 
         // 1. 生成唯一文件名 UUID.mp3
         String originalName = file.getOriginalFilename();
@@ -44,13 +45,14 @@ public class AudioService {
         }
         String extension = originalName != null ? originalName.substring(originalName.lastIndexOf(".")) : ".mp3";
         String uuidName = UUID.randomUUID().toString() + extension;
-        
+
         // 2. 确保目录存在
         File dir = new File(storagePath);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists())
+            dir.mkdirs();
 
         // 3. 保存物理文件
-       Path targetPath = Paths.get(storagePath, uuidName).normalize();
+        Path targetPath = Paths.get(storagePath, uuidName).normalize();
 
         // 使用 Files.copy 替代 transferTo
         Files.createDirectories(targetPath.getParent());
@@ -67,21 +69,24 @@ public class AudioService {
         asset.setHashCode(md5);
         asset.setCreateTime(new Date());
         asset.setStatus(1);
-        
+
         audioAssetMapper.insert(asset);
     }
+
     private String calculateMD5FromFile(File file) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] fileBytes = Files.readAllBytes(file.toPath());
             byte[] digest = md.digest(fileBytes);
             StringBuilder sb = new StringBuilder();
-            for (byte b : digest) sb.append(String.format("%02x", b));
+            for (byte b : digest)
+                sb.append(String.format("%02x", b));
             return sb.toString();
-        } catch (Exception e) { 
+        } catch (Exception e) {
             throw new RuntimeException("计算文件MD5失败", e);
         }
     }
+
     /**
      * 分页查询 (按创建时间降序)
      */
@@ -89,22 +94,22 @@ public class AudioService {
         Page<AudioAsset> pageInfo = new Page<>(page, size);
         QueryWrapper<AudioAsset> wrapper = new QueryWrapper<>();
         wrapper.eq("status", 1);
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             String searchKeyword = "%" + keyword.trim() + "%";
             wrapper.and(w -> w.like("file_name", searchKeyword)
-                             .or()
-                             .like("tags", searchKeyword));
+                    .or()
+                    .like("tags", searchKeyword));
         }
-        
+
         wrapper.orderByDesc("create_time");
         return audioAssetMapper.selectPage(pageInfo, wrapper);
     }
-    
+
     public Page<AudioAsset> listAudios(int page, int size) {
         return listAudios(page, size, null);
     }
-    
+
     /**
      * 删除音频 (物理+逻辑)
      */
@@ -133,6 +138,7 @@ public class AudioService {
             }
         }
     }
+
     /**
      * 修改音频名称
      */
@@ -145,15 +151,15 @@ public class AudioService {
         asset.setFileName(newFileName);
         audioAssetMapper.updateById(asset);
     }
-     /**
+
+    /**
      * 清理无效记录（文件不存在但数据库仍有记录）
      */
     @Transactional
     public int cleanupInvalidRecords() {
         List<AudioAsset> allAudios = audioAssetMapper.selectList(
-            new QueryWrapper<AudioAsset>().eq("status", 1)
-        );
-        
+                new QueryWrapper<AudioAsset>().eq("status", 1));
+
         int cleanedCount = 0;
         for (AudioAsset asset : allAudios) {
             File file = new File(asset.getFilePath());
@@ -163,16 +169,18 @@ public class AudioService {
                 System.out.println("已清理无效记录 ID: " + asset.getId() + ", 文件名: " + asset.getFileName());
             }
         }
-        
+
         return cleanedCount;
     }
-     /**
+
+    /**
      * 获取音频资产信息
      */
     public AudioAsset getAudioAssetById(Long id) {
         return audioAssetMapper.selectById(id);
     }
-     /**
+
+    /**
      * 获取文件流 (用于播放)
      */
     public File getAudioFile(Long id) {
@@ -181,19 +189,19 @@ public class AudioService {
             System.err.println("数据库中未找到音频记录，ID: " + id);
             return null;
         }
-        
+
         if (asset.getStatus() != 1) {
             System.err.println("音频状态异常，ID: " + id + ", 状态: " + asset.getStatus());
             return null;
         }
-        
+
         File file = new File(asset.getFilePath());
         if (!file.exists()) {
             System.err.println("物理文件不存在，ID: " + id + ", 路径: " + asset.getFilePath());
             return null;
         }
-        
+
         return file;
     }
-     
+
 }

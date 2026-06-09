@@ -1049,7 +1049,7 @@
           <p>音频管理系统</p>
         </div>
 
-                <nav class="sidebar-nav">
+        <nav class="sidebar-nav">
           <div class="nav-section">
             <div
               class="nav-item active"
@@ -1080,7 +1080,7 @@
               data-section="registrations"
               onclick="switchSection('registrations')"
               id="navRegistrations"
-              style="display: none;"
+              style="display: none"
             >
               <span class="nav-icon">📝</span>
               <span>注册申请审核</span>
@@ -1336,18 +1336,35 @@
                   🔄 刷新列表
                 </button>
               </div>
-              
-              <div class="registration-list-container" id="registrationListContainer">
+
+              <div
+                class="registration-list-container"
+                id="registrationListContainer"
+              >
                 <div class="empty-state">
                   <div class="empty-state-icon">📝</div>
                   <div class="empty-state-text">加载中...</div>
                 </div>
               </div>
-              
-              <div class="pagination" id="registrationPagination" style="display: none;">
-                <button onclick="changeRegistrationPage(currentRegistrationPage - 1)" id="regPrevBtn">上一页</button>
+
+              <div
+                class="pagination"
+                id="registrationPagination"
+                style="display: none"
+              >
+                <button
+                  onclick="changeRegistrationPage(currentRegistrationPage - 1)"
+                  id="regPrevBtn"
+                >
+                  上一页
+                </button>
                 <span id="regPageInfo" class="page-info">第 1 / 1 页</span>
-                <button onclick="changeRegistrationPage(currentRegistrationPage + 1)" id="regNextBtn">下一页</button>
+                <button
+                  onclick="changeRegistrationPage(currentRegistrationPage + 1)"
+                  id="regNextBtn"
+                >
+                  下一页
+                </button>
               </div>
             </div>
           </div>
@@ -1506,7 +1523,7 @@
       let currentPage = 1;
       let pageSize = 10;
       let totalPages = 1;
-      
+
       let currentRegistrationPage = 1;
       let registrationPageSize = 10;
       let registrationTotalPages = 1;
@@ -1615,7 +1632,7 @@
         }
       }
 
-            function showApp() {
+      function showApp() {
         document.getElementById("loginPage").classList.add("hidden");
         document.getElementById("appContainer").classList.remove("hidden");
 
@@ -1629,11 +1646,11 @@
           .toUpperCase();
 
         // 只有管理员显示注册申请审核菜单
-        const navRegistrations = document.getElementById('navRegistrations');
+        const navRegistrations = document.getElementById("navRegistrations");
         if (currentRole === 0) {
-          navRegistrations.style.display = 'flex';
+          navRegistrations.style.display = "flex";
         } else {
-          navRegistrations.style.display = 'none';
+          navRegistrations.style.display = "none";
         }
 
         // 加载音频列表
@@ -2303,8 +2320,12 @@
         }
       }
       async function loadPendingRegistrations() {
-        const registrationListContainer = document.getElementById("registrationListContainer");
-        const registrationPagination = document.getElementById("registrationPagination");
+        const registrationListContainer = document.getElementById(
+          "registrationListContainer",
+        );
+        const registrationPagination = document.getElementById(
+          "registrationPagination",
+        );
 
         if (currentRole !== 0) {
           registrationListContainer.innerHTML = `
@@ -2313,7 +2334,7 @@
               <div class="empty-state-text">权限不足：只有管理员可以查看注册申请</div>
             </div>
           `;
-          registrationPagination.style.display = 'none';
+          registrationPagination.style.display = "none";
           return;
         }
 
@@ -2322,7 +2343,7 @@
             `${API_BASE}/auth/registrations?page=${currentRegistrationPage}&size=${registrationPageSize}`,
             {
               headers: getHeaders(),
-            }
+            },
           );
 
           if (!response.ok) {
@@ -2331,9 +2352,13 @@
 
           const data = await response.json();
 
-          if (data.code === 200 && data.registrations && data.registrations.length > 0) {
+          if (
+            data.code === 200 &&
+            data.registrations &&
+            data.registrations.length > 0
+          ) {
             registrationTotalPages = data.pages || 1;
-            
+
             registrationListContainer.innerHTML = data.registrations
               .map((reg) => {
                 const applyTime = new Date(reg.applyTime).toLocaleString();
@@ -2353,9 +2378,9 @@
                 `;
               })
               .join("");
-            
+
             updateRegistrationPaginationUI();
-            registrationPagination.style.display = 'flex';
+            registrationPagination.style.display = "flex";
           } else {
             registrationListContainer.innerHTML = `
               <div class="empty-state">
@@ -2363,7 +2388,7 @@
                 <div class="empty-state-text">暂无待审核的注册申请</div>
               </div>
             `;
-            registrationPagination.style.display = 'none';
+            registrationPagination.style.display = "none";
           }
         } catch (error) {
           console.error("加载注册申请失败:", error);
@@ -2373,14 +2398,17 @@
               <div class="empty-state-text">加载失败，请刷新重试</div>
             </div>
           `;
-          registrationPagination.style.display = 'none';
+          registrationPagination.style.display = "none";
         }
       }
 
       function updateRegistrationPaginationUI() {
-        document.getElementById('regPageInfo').innerText = `第 ${currentRegistrationPage} / ${registrationTotalPages} 页`;
-        document.getElementById('regPrevBtn').disabled = currentRegistrationPage <= 1;
-        document.getElementById('regNextBtn').disabled = currentRegistrationPage >= registrationTotalPages;
+        document.getElementById("regPageInfo").innerText =
+          `第 ${currentRegistrationPage} / ${registrationTotalPages} 页`;
+        document.getElementById("regPrevBtn").disabled =
+          currentRegistrationPage <= 1;
+        document.getElementById("regNextBtn").disabled =
+          currentRegistrationPage >= registrationTotalPages;
       }
 
       async function changeRegistrationPage(page) {
