@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS audio_assets (
     hash_code VARCHAR(64) COMMENT 'MD5哈希值',
     create_time DATETIME COMMENT '创建时间',
     status INT DEFAULT 1 COMMENT '状态: 1正常, 0删除',
+    tags VARCHAR(500) COMMENT '标签，多个标签用逗号分隔',
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='音频资产表';
 
@@ -16,6 +17,18 @@ CREATE TABLE IF NOT EXISTS sys_users (
     password VARCHAR(100),
     role_level INT DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+
+CREATE TABLE IF NOT EXISTS user_registration (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    apply_time DATETIME NOT NULL,
+    status INT DEFAULT 0 COMMENT '状态: 0待审核, 1已通过, 2已拒绝',
+    review_comment VARCHAR(500) COMMENT '审核意见',
+    reviewer_id INT COMMENT '审核人ID',
+    review_time DATETIME COMMENT '审核时间',
+    UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户注册申请表';
 
 -- 初始测试账户数据
 -- 管理员账户 (role_level = 0): 拥有所有权限，包括删除功能
