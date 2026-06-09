@@ -167,8 +167,8 @@ public class AuthController {
             @RequestBody(required = false) Map<String, String> data,
             HttpServletRequest request) {
         Integer roleLevel = (Integer) request.getAttribute("roleLevel");
-        String username = (String) request.getAttribute("claims") != null ? 
-            ((Claims) request.getAttribute("claims")).getSubject() : null;
+        Claims claims = (Claims) request.getAttribute("claims");
+        String username = claims != null ? claims.getSubject() : null;
 
         System.out.println("=== 审核通过 ===");
         System.out.println("申请ID: " + id);
@@ -216,28 +216,53 @@ public class AuthController {
         newUser.setUsername(registration.getUsername());
         newUser.setPassword(registration.getPassword());
         newUser.setRoleLevel(1);
-        userMapper.insert(newUser);
-        System.out.println("创建新用户成功，ID: " + newUser.getId());
+        
+        try {
+            userMapper.insert(newUser);
+            System.out.println("创建新用户成功，ID: " + newUser.getId());
+        } catch (Exception e) {
+            System.err.println("创建用户失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", 500);
+            error.put("msg", "创建用户失败: " + e.getMessage());
+            return error;
+        }
 
         registration.setStatus(1);
         
-        QueryWrapper<SysUser> adminWrapper = new QueryWrapper<>();
-        adminWrapper.eq("username", username);
-        SysUser adminUser = userMapper.selectOne(adminWrapper);
-        if (adminUser != null) {
-            registration.setReviewerId(adminUser.getId());
-            System.out.println("审核人ID: " + adminUser.getId());
+        if (username != null && !username.isEmpty()) {
+            QueryWrapper<SysUser> adminWrapper = new QueryWrapper<>();
+            adminWrapper.eq("username", username);
+            SysUser adminUser = userMapper.selectOne(adminWrapper);
+            if (adminUser != null) {
+                registration.setReviewerId(adminUser.getId());
+                System.out.println("审核人ID: " + adminUser.getId());
+            } else {
+                registration.setReviewerId(null);
+                System.out.println("警告：找不到审核人信息，username=" + username);
+            }
         } else {
             registration.setReviewerId(null);
-            System.out.println("警告：找不到审核人信息");
+            System.out.println("警告：Token中未包含用户名信息");
         }
         
         registration.setReviewTime(new Date());
         if (data != null && data.containsKey("comment")) {
             registration.setReviewComment(data.get("comment"));
         }
-        registrationMapper.updateById(registration);
-        System.out.println("更新注册申请状态成功");
+        
+        try {
+            registrationMapper.updateById(registration);
+            System.out.println("更新注册申请状态成功");
+        } catch (Exception e) {
+            System.err.println("更新注册申请失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", 500);
+            error.put("msg", "更新注册申请失败: " + e.getMessage());
+            return error;
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
@@ -247,11 +272,11 @@ public class AuthController {
 
     @PostMapping("/registrations/{id}/reject")
     public Map<String, Object> rejectRegistration(@PathVariable Integer id,
-            @RequestBody Map<String, String> data,
+            @RequestBody(required = false) Map<String, String> data,
             HttpServletRequest request) {
         Integer roleLevel = (Integer) request.getAttribute("roleLevel");
-        String username = (String) request.getAttribute("claims") != null ? 
-            ((Claims) request.getAttribute("claims")).getSubject() : null;
+        Claims claims = (Claims) request.getAttribute("claims");
+        String username = claims != null ? claims.getSubject() : null;
 
         System.out.println("=== 拒绝申请 ===");
         System.out.println("申请ID: " + id);
@@ -285,23 +310,38 @@ public class AuthController {
 
         registration.setStatus(2);
         
-        QueryWrapper<SysUser> adminWrapper = new QueryWrapper<>();
-        adminWrapper.eq("username", username);
-        SysUser adminUser = userMapper.selectOne(adminWrapper);
-        if (adminUser != null) {
-            registration.setReviewerId(adminUser.getId());
-            System.out.println("审核人ID: " + adminUser.getId());
+        if (username != null && !username.isEmpty()) {
+            QueryWrapper<SysUser> adminWrapper = new QueryWrapper<>();
+            adminWrapper.eq("username", username);
+            SysUser adminUser = userMapper.selectOne(adminWrapper);
+            if (adminUser != null) {
+                registration.setReviewerId(adminUser.getId());
+                System.out.println("审核人ID: " + adminUser.getId());
+            } else {
+                registration.setReviewerId(null);
+                System.out.println("警告：找不到审核人信息，username=" + username);
+            }
         } else {
             registration.setReviewerId(null);
-            System.out.println("警告：找不到审核人信息");
+            System.out.println("警告：Token中未包含用户名信息");
         }
         
         registration.setReviewTime(new Date());
         if (data != null && data.containsKey("comment")) {
             registration.setReviewComment(data.get("comment"));
         }
-        registrationMapper.updateById(registration);
-        System.out.println("更新注册申请状态成功");
+        
+        try {
+            registrationMapper.updateById(registration);
+            System.out.println("更新注册申请状态成功");
+        } catch (Exception e) {
+            System.err.println("更新注册申请失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", 500);
+            error.put("msg", "更新注册申请失败: " + e.getMessage());
+            return error;
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
