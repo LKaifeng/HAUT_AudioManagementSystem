@@ -85,12 +85,24 @@ public class AudioService {
     /**
      * 分页查询 (按创建时间降序)
      */
-    public Page<AudioAsset> listAudios(int page, int size) {
+    public Page<AudioAsset> listAudios(int page, int size, String keyword) {
         Page<AudioAsset> pageInfo = new Page<>(page, size);
         QueryWrapper<AudioAsset> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 1)
-               .orderByDesc("create_time");
+        wrapper.eq("status", 1);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String searchKeyword = "%" + keyword.trim() + "%";
+            wrapper.and(w -> w.like("file_name", searchKeyword)
+                             .or()
+                             .like("tags", searchKeyword));
+        }
+        
+        wrapper.orderByDesc("create_time");
         return audioAssetMapper.selectPage(pageInfo, wrapper);
+    }
+    
+    public Page<AudioAsset> listAudios(int page, int size) {
+        return listAudios(page, size, null);
     }
     
     /**
@@ -183,4 +195,5 @@ public class AudioService {
         
         return file;
     }
+     
 }

@@ -10,14 +10,15 @@ import java.util.Date;
 @Data
 @TableName("audio_assets")
 public class AudioAsset {
-    @TableId(type = IdType.ASSIGN_ID) // 雪花算法生成Long ID
-    @JsonFormat(shape = JsonFormat.Shape.STRING) // 关键：防止前端精度丢失
+    @TableId(type = IdType.ASSIGN_ID)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
 
-    private String fileName;      // 原始文件名
-    private String filePath;      // 物理路径
+    private String fileName;
+    private String filePath;
     private Long fileSize;
-    private String hashCode;      // MD5
+    private String hashCode;
     private Date createTime;
-    private Integer status;       // 1:正常
+    private Integer status;
+    private String tags;
 }
